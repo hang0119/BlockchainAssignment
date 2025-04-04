@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Edit Profile and Purchases</title>
+  <style>
+    /* Your existing CSS */
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(to right, #4CAF50, #81C784);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+
+    .form-container {
+      background-color: white;
+      padding: 40px 30px;
+      border-radius: 12px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+      width: 100%;
+      max-width: 400px;
+    }
+
+    h2 {
+      margin-bottom: 20px;
+      color: #333;
+      text-align: center;
+    }
+
+    label {
+      font-weight: bold;
+      margin-top: 15px;
+      display: block;
+      color: #555;
+    }
+
+    input {
+      width: 100%;
+      padding: 10px;
+      margin-top: 5px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 16px;
+    }
+
+    button {
+      width: 100%;
+      padding: 12px;
+      margin-top: 20px;
+      background-color: #4CAF50;
+      color: white;
+      font-size: 16px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    button:hover:not(:disabled) {
+      background-color: #45a049;
+    }
+
+    button:disabled {
+      background-color: #cccccc;
+      cursor: not-allowed;
+    }
+
+    .error {
+      color: red;
+      margin-top: 10px;
+      text-align: center;
+    }
+
+    .loading {
+      color: #1976D2;
+      margin-top: 10px;
+      text-align: center;
+    }
+
+    .switch-link {
+      text-align: center;
+      margin-top: 15px;
+    }
+
+    .switch-link a {
+      color: #4CAF50;
+      text-decoration: none;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .switch-link a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="form-container">
+    <h2 id="formTitle">Edit Profile</h2>
+    <form id="editProfileForm">
+      <label for="email">Email</label>
+      <input type="email" id="email" required />
+
+      <label for="newEmail">New Email</label>
+      <input type="email" id="newEmail" placeholder="Enter new email" style="display:none" />
+      
+      <label for="password">Password</label>
+      <input type="password" id="password" required />
+
+      <label for="purchase">Purchase Record</label>
+      <input type="text" id="purchase" placeholder="Enter purchase details" />
+
+      <button type="submit" id="submitBtn">Update Profile</button>
+
+      <p id="errorMessage" class="error"></p>
+      <p id="loadingMessage" class="loading" style="display: none;">Please wait...</p>
+    </form>
+
+    <div class="switch-link">
+      <span id="switchText">Want to change email? <a id="changeEmailLink">Change Email</a></span>
+    </div>
+  </div>
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyDlWJBq41lbwCHH5ud_iTO72IMBK55OFM0",
+      authDomain: "blockchainassignment.firebaseapp.com",
+      databaseURL: "https://blockchainassignment-default-rtdb.asia-southeast1.firebasedatabase.app/",
+      projectId: "blockchainassignment",
+      storageBucket: "blockchainassignment.appspot.com",
+      messagingSenderId: "157364473045",
+      appId: "1:157364473045:web:ec78470e48ae39e873665c",
+      measurementId: "G-B2Y542REH4"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const database = firebase.database();
+
+    const submitBtn = document.getElementById('submitBtn');
+    const errorMessage = document.getElementById('errorMessage');
+    const loadingMessage = document.getElementById('loadingMessage');
+
+    document.getElementById('editProfileForm').addEventListener('submit', function (e) {
+      e.preventDefault();
+      const email = document.getElementById('email').value;
+      const newEmail = document.getElementById('newEmail').value;
+      const password = document.getElementById('password').value;
+      const purchase = document.getElementById('purchase').value;
+
+      errorMessage.textContent = '';
+      loadingMessage.style.display = 'block';
+      submitBtn.disabled = true;
+
+      const handleComplete = () => {
+        loadingMessage.style.display = 'none';
+        submitBtn.disabled = false;
+      };
+
+      // First, sign in the user to authenticate them
+      auth.signInWithEmailAndPassword(email, password)
+        .then(() => {
+          // If new email is provided, update it
+          if (newEmail) {
+            const user = auth.currentUser;
+            user.updateEmail(newEmail)
+              .then(() => {
+                // Send verification email
+                user.sendEmailVerification()
+                  .then(() => {
+                    errorMessage.textContent = 'A verification email has been sent to your new email.';
+                  })
+                  .catch((error) => {
+                    errorMessage.textContent = 'Error sending verification email: ' + error.message;
+                  });
+              })
+              .catch((error) => {
+                errorMessage.textContent = 'Error updating email: ' + error.message;
+              });
+          }
+
+          // Update the user's purchase record in the database
+          const user = auth.currentUser;
+          return database.ref('users/' + user.uid).update({
+            email: user.email,
+            purchaseRecord: purchase,
+            updatedAt: new Date().toISOString()
+          });
+        })
+        .then(() => {
+          alert("Profile updated successfully!");
+          handleComplete();
+        })
+        .catch((error) => {
+          errorMessage.textContent = "Error: " + error.message;
+          handleComplete();
+        });
+    });
+
+    // Change email link functionality
+    document.getElementById('changeEmailLink').addEventListener('click', function () {
+      const newEmailInput = document.getElementById('newEmail');
+      newEmailInput.style.display = 'block';
+    });
+  </script>
+</body>
+</html>

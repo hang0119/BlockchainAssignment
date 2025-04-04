@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Sign Up</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+    }
+    label, input {
+      margin: 10px 0;
+      padding: 5px;
+      display: block;
+    }
+    button {
+      padding: 10px;
+      font-size: 16px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    button:disabled {
+      background-color: #cccccc;
+      cursor: not-allowed;
+    }
+    .error {
+      color: red;
+      font-size: 14px;
+    }
+    .loading {
+      color: blue;
+    }
+  </style>
+</head>
+<body>
+  <h2>Sign Up</h2>
+  <form id="signupForm">
+    <label>Email:</label>
+    <input type="email" id="email" required><br>
+
+    <label>Password:</label>
+    <input type="password" id="password" required><br>
+
+    <button type="submit" id="signupBtn">Sign Up</button>
+    <p id="errorMessage" class="error"></p>
+    <p id="loadingMessage" class="loading" style="display: none;">Please wait...</p>
+  </form>
+
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
+
+  <script>
+    // Firebase 配置
+    const firebaseConfig = {
+      apiKey: "AIzaSyDlWJBq41lbwCHH5ud_iTO72IMBK55OFM0",
+      authDomain: "blockchainassignment.firebaseapp.com",
+      databaseURL: "https://blockchainassignment-default-rtdb.asia-southeast1.firebasedatabase.app/",
+      projectId: "blockchainassignment",
+      storageBucket: "blockchainassignment.appspot.com",
+      messagingSenderId: "157364473045",
+      appId: "1:157364473045:web:ec78470e48ae39e873665c",
+      measurementId: "G-B2Y542REH4"
+    };
+
+    // 初始化 Firebase
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const database = firebase.database();
+
+    // 注册逻辑
+    document.getElementById("signupForm").addEventListener("submit", function(e) {
+      e.preventDefault();
+      const email = document.getElementById("email").value;
+      const password = document.getElementById("password").value;
+
+      // 清除之前的错误信息
+      document.getElementById("errorMessage").textContent = '';
+      document.getElementById("loadingMessage").style.display = 'block';
+
+      // 禁用提交按钮，防止重复点击
+      document.getElementById("signupBtn").disabled = true;
+
+      auth.createUserWithEmailAndPassword(email, password)
+        .then((userCredential) => {
+          const user = userCredential.user;
+
+          // 写入数据库
+          return database.ref('users/' + user.uid).set({
+            email: user.email,
+            createdAt: new Date().toISOString()
+          });
+        })
+        .then(() => {
+          // 注册成功后显示提示
+          alert("Registration successful! Welcome " + email);
+
+          // 清空表单字段
+          document.getElementById("email").value = '';
+          document.getElementById("password").value = '';
+
+          // 隐藏加载状态
+          document.getElementById("loadingMessage").style.display = 'none';
+
+          // 启用提交按钮
+          document.getElementById("signupBtn").disabled = false;
+        })
+        .catch((error) => {
+          // 显示错误信息
+          document.getElementById("errorMessage").textContent = "Error: " + error.message;
+
+          // 隐藏加载状态
+          document.getElementById("loadingMessage").style.display = 'none';
+
+          // 启用提交按钮
+          document.getElementById("signupBtn").disabled = false;
+        });
+    });
+  </script>
+</body>
+</html>

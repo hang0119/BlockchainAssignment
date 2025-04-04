@@ -1,0 +1,65 @@
+<!-- signup.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Sign Up</title>
+</head>
+<body>
+  <h2>Sign Up</h2>
+  <form id="signupForm">
+    <label>Email:</label><br>
+    <input type="email" id="email" required><br><br>
+
+    <label>Password:</label><br>
+    <input type="password" id="password" required><br><br>
+
+    <button type="submit">Sign Up</button>
+  </form>
+
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js"></script>
+  <script>
+    // Firebase 配置
+    const firebaseConfig = {
+      apiKey: "AIzaSyDlWJBq41lbwCHH5ud_iTO72IMBK55OFM0",
+      authDomain: "blockchainassignment.firebaseapp.com",
+      databaseURL: "https://blockchainassignment-default-rtdb.asia-southeast1.firebasedatabase.app/",
+      projectId: "blockchainassignment",
+      storageBucket: "blockchainassignment.appspot.com",
+      messagingSenderId: "157364473045",
+      appId: "1:157364473045:web:ec78470e48ae39e873665c",
+      measurementId: "G-B2Y542REH4"
+    };
+
+    // 初始化 Firebase
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const database = firebase.database();
+
+    // 注册逻辑
+    document.getElementById("signupForm").addEventListener("submit", function(e) {
+      e.preventDefault();
+      const email = document.getElementById("email").value;
+      const password = document.getElementById("password").value;
+
+      auth.createUserWithEmailAndPassword(email, password)
+        .then((userCredential) => {
+          const user = userCredential.user;
+
+          // 写入数据库
+          database.ref('users/' + user.uid).set({
+            email: user.email,
+            createdAt: new Date().toISOString()
+          });
+
+          alert("Registration successful! Welcome " + user.email);
+        })
+        .catch((error) => {
+          alert("Error: " + error.message);
+        });
+    });
+  </script>
+</body>
+</html>

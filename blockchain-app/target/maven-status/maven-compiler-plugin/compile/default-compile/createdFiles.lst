@@ -1,2 +1,10 @@
 com\blockchain\assignment\App.class
+com\blockchain\assignment\HashUtil.class
+com\blockchain\assignment\MerkleTree.class
+com\blockchain\assignment\Blockchain.class
+com\blockchain\assignment\Block.class
 com\blockchain\assignment\FirebaseConfig.class
+utils\PasswordUtils.class
+com\blockchain\assignment\AuthService.class
+com\blockchain\assignment\FirebaseUtils.class
+com\blockchain\assignment\MerkleTreeTest.class

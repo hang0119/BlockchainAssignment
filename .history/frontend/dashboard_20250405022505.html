@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Dashboard</title>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #eef2f5;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+    .card {
+      background: #fff;
+      padding: 40px;
+      border-radius: 12px;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+      text-align: center;
+    }
+    .btn, .deleteAccountBtn {
+      display: inline-block;
+      margin: 10px;
+      padding: 12px 24px;
+      background: #007bff;
+      color: #fff;
+      border-radius: 8px;
+      text-decoration: none;
+      transition: 0.2s;
+    }
+    .btn:hover,.deleteAccountBtn: {
+      background: #0056b3;
+    }
+    #userInfo {
+      margin-top: 20px;
+      color: #555;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Welcome back!</h1>
+    <div id="userInfo">Loading user info...</div>
+    <a class="btn" href="edit.html">Edit Profile</a>
+    <button id="deleteAccountBtn">Delete Account</button>
+    <a class="btn" href="#" onclick="logout()">Log Out</a>
+  </div>
+
+  <script>
+    // Firebase Config
+    const firebaseConfig = {
+        apiKey: "AIzaSyDlWJBq41lbwCHH5ud_iTO72IMBK55OFM0",
+        authDomain: "blockchainassignment.firebaseapp.com",
+        projectId: "blockchainassignment",
+        databaseURL: "https://blockchainassignment-default-rtdb.asia-southeast1.firebasedatabase.app/"
+    };
+    firebase.initializeApp(firebaseConfig);
+
+    // 获取当前登录用户信息
+    firebase.auth().onAuthStateChanged((user) => {
+      const userInfo = document.getElementById("userInfo");
+      if (user) {
+        userInfo.innerHTML = `
+          <strong>UID:</strong> ${user.uid}<br>
+          <strong>Email:</strong> ${user.email}
+        `;
+      } else {
+        userInfo.textContent = "No user is signed in.";
+        // 跳转回 login 页面
+        window.location.href = "authpage.html";
+      }
+    });
+
+    // 删除账户功能
+    document.getElementById('deleteAccountBtn').addEventListener('click', function() {
+      const user = firebase.auth().currentUser;
+
+      if (user) {
+        // 双重确认
+        const confirmDelete = window.confirm("Are you sure you want to delete your account? This action cannot be undone.");
+        if (confirmDelete) {
+          // 删除 Firebase Realtime Database 中的用户数据
+          firebase.database().ref('users/' + user.uid).remove()
+            .then(() => {
+              console.log('User data deleted from database');
+              // 删除 Firebase Authentication 中的用户账户
+              return user.delete();
+            })
+            .then(() => {
+              alert('Account and data deleted successfully!');
+              // 删除后跳转到登录页面
+              window.location.href = "authpage.html";
+            })
+            .catch((error) => {
+              alert('Error deleting data or account: ' + error.message);
+            });
+        } else {
+          // 用户取消删除
+          alert('Account deletion cancelled.');
+        }
+      } else {
+        alert('No user is logged in.');
+      }
+    });
+
+    // 登出功能
+    function logout() {
+      firebase.auth().signOut().then(() => {
+        window.location.href = "authpage.html";
+      });
+    }
+  </script>
+</body>
+</html>

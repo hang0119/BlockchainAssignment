@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Edit Profile</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(to right, #4CAF50, #81C784);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+
+    .form-container {
+      background-color: white;
+      padding: 40px 30px;
+      border-radius: 12px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+      width: 100%;
+      max-width: 400px;
+    }
+
+    h2 {
+      margin-bottom: 20px;
+      color: #333;
+      text-align: center;
+    }
+
+    label {
+      font-weight: bold;
+      margin-top: 15px;
+      display: block;
+      color: #555;
+    }
+
+    input {
+      width: 100%;
+      padding: 10px;
+      margin-top: 5px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 16px;
+    }
+
+    button {
+      width: 100%;
+      padding: 12px;
+      margin-top: 20px;
+      background-color: #4CAF50;
+      color: white;
+      font-size: 16px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    button:hover:not(:disabled) {
+      background-color: #45a049;
+    }
+
+    button:disabled {
+      background-color: #cccccc;
+      cursor: not-allowed;
+    }
+
+    .error {
+      color: red;
+      margin-top: 10px;
+      text-align: center;
+    }
+
+    .loading {
+      color: #1976D2;
+      margin-top: 10px;
+      text-align: center;
+    }
+
+    .confirm-container {
+      margin-top: 20px;
+      text-align: center;
+    }
+
+    .confirm-container button {
+      background-color: #f44336;
+    }
+
+    .confirm-container button:hover {
+      background-color: #e53935;
+    }
+  </style>
+</head>
+<body>
+  <div class="form-container">
+    <h2>Edit Profile</h2>
+    <form id="editForm">
+      <label for="email">Email</label>
+      <input type="email" id="email" required />
+
+      <label for="newPassword">New Password</label>
+      <input type="password" id="newPassword" required />
+
+      <button type="submit" id="submitBtn">Update Profile</button>
+
+      <p id="errorMessage" class="error"></p>
+      <p id="loadingMessage" class="loading" style="display: none;">Please wait...</p>
+    </form>
+
+    <!-- Double Confirmation Modal -->
+    <div id="confirmModal" class="confirm-container" style="display: none;">
+      <p>Are you sure you want to update your profile?</p>
+      <button id="confirmBtn">Yes, Update</button>
+      <button id="cancelBtn">Cancel</button>
+    </div>
+  </div>
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyDlWJBq41lbwCHH5ud_iTO72IMBK55OFM0",
+      authDomain: "blockchainassignment.firebaseapp.com",
+      databaseURL: "https://blockchainassignment-default-rtdb.asia-southeast1.firebasedatabase.app/",
+      projectId: "blockchainassignment",
+      storageBucket: "blockchainassignment.appspot.com",
+      messagingSenderId: "157364473045",
+      appId: "1:157364473045:web:ec78470e48ae39e873665c",
+      measurementId: "G-B2Y542REH4"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const database = firebase.database();
+
+    const emailInput = document.getElementById('email');
+    const newPasswordInput = document.getElementById('newPassword');
+    const submitBtn = document.getElementById('submitBtn');
+    const errorMessage = document.getElementById('errorMessage');
+    const loadingMessage = document.getElementById('loadingMessage');
+    const confirmModal = document.getElementById('confirmModal');
+    const confirmBtn = document.getElementById('confirmBtn');
+    const cancelBtn = document.getElementById('cancelBtn');
+
+    // 获取当前用户信息并预填表单
+    auth.onAuthStateChanged(user => {
+      if (user) {
+        emailInput.value = user.email; // 填充当前用户的邮箱
+      } else {
+        window.location.href = 'signin.html'; // 如果没有登录，跳转到登录页面
+      }
+    });
+
+    document.getElementById('editForm').addEventListener('submit', function (e) {
+      e.preventDefault();
+      
+      const email = emailInput.value;
+      const newPassword = newPasswordInput.value;
+
+      errorMessage.textContent = '';
+      loadingMessage.style.display = 'block';
+      submitBtn.disabled = true;
+
+      const handleComplete = () => {
+        loadingMessage.style.display = 'none';
+        submitBtn.disabled = false;
+      };
+
+      // 显示确认弹窗
+      confirmModal.style.display = 'block';
+
+      // 点击确认按钮时执行更新
+      confirmBtn.addEventListener('click', function() {
+        const user = auth.currentUser;
+
+        if (user) {
+          // 检查邮箱是否已经验证
+          if (!user.emailVerified) {
+            user.sendEmailVerification()
+              .then(() => {
+                alert('Please verify your email before proceeding.');
+                window.location.href = 'signin.html'; // 可以引导用户去登录页面
+              })
+              .catch((error) => {
+                errorMessage.textContent = "Error sending verification email: " + error.message;
+                confirmModal.style.display = 'none';
+                handleComplete();
+              });
+          } else {
+            // 用户的邮箱已验证，允许更改
+            user.updateEmail(email)
+              .then(() => {
+                if (newPassword) {
+                  return user.updatePassword(newPassword);  // 如果用户输入了新密码
+                }
+              })
+              .then(() => {
+                alert('Profile updated successfully!');
+                confirmModal.style.display = 'none'; // 隐藏确认框
+                handleComplete();
+              })
+              .catch((error) => {
+                errorMessage.textContent = "Error: " + error.message;
+                confirmModal.style.display = 'none'; // 隐藏确认框
+                handleComplete();
+              });
+          }
+        } else {
+          errorMessage.textContent = "No user is logged in!";
+          confirmModal.style.display = 'none'; // 隐藏确认框
+          handleComplete();
+        }
+      });
+
+      // 点击取消按钮时隐藏确认弹窗
+      cancelBtn.addEventListener('click', function() {
+        confirmModal.style.display = 'none';
+        handleComplete();
+      });
+    });
+  </script>
+</body>
+</html>

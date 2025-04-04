@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Dashboard</title>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #eef2f5;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+    .card {
+      background: #fff;
+      padding: 40px;
+      border-radius: 12px;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+      text-align: center;
+    }
+    .btn {
+      display: inline-block;
+      margin: 10px;
+      padding: 12px 24px;
+      background: #007bff;
+      color: #fff;
+      border-radius: 8px;
+      text-decoration: none;
+      transition: 0.2s;
+    }
+    .btn:hover {
+      background: #0056b3;
+    }
+    #userInfo {
+      margin-top: 20px;
+      color: #555;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Welcome back!</h1>
+    <div id="userInfo">Loading user info...</div>
+    <a class="btn" href="edit-profile.html">Edit Profile</a>
+    <a class="btn" href="delete-profile.html">Delete Account</a>
+    <a class="btn" href="#" onclick="logout()">Log Out</a>
+  </div>
+
+  <script>
+    // Firebase Config
+    const firebaseConfig = {
+        apiKey: "AIzaSyDlWJBq41lbwCHH5ud_iTO72IMBK55OFM0",
+        authDomain: "blockchainassignment.firebaseapp.com",
+          projectId: "blockchainassignment",
+    };
+    firebase.initializeApp(firebaseConfig);
+
+    // 获取当前登录用户信息
+    firebase.auth().onAuthStateChanged((user) => {
+      const userInfo = document.getElementById("userInfo");
+      if (user) {
+        userInfo.innerHTML = `
+          <strong>UID:</strong> ${user.uid}<br>
+          <strong>Email:</strong> ${user.email}
+        `;
+      } else {
+        userInfo.textContent = "No user is signed in.";
+        // 跳转回 login 页面
+        window.location.href = "login.html";
+      }
+    });
+
+    // 登出功能
+    function logout() {
+      firebase.auth().signOut().then(() => {
+        window.location.href = "login.html";
+      });
+    }
+  </script>
+</body>
+</html>
